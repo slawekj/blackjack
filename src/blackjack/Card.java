@@ -1,19 +1,16 @@
 package blackjack;
 
 /**
- * This class defines a BlackJack card.
+ * 
+ * This class defines a generic card. Calculating the value of a specific card
+ * is not defined in this class. It's because in some games the value of a
+ * specific card cannot be determined without having a knowledge of the whole
+ * hand, an example is ACE in Black Jack.
  * 
  * @author Janusz Slawek
  * 
  */
 public class Card implements ICard {
-	/**
-	 * This is a static variable, shared by all instances of Card. It defines
-	 * the default mapping of a card rank to a value. By default Ace counts as
-	 * 1.
-	 */
-	private final static int VALUES[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10,
-			10, 1 };
 	/**
 	 * Field face.
 	 */
@@ -36,15 +33,6 @@ public class Card implements ICard {
 		this.rank = r;
 		this.suit = s;
 		face = Face.DOWN;
-	}
-
-	/**
-	 * Method getValue.
-	 * 
-	 */
-	@Override
-	public int getValue() {
-		return VALUES[rank.getIndex()];
 	}
 
 	/**

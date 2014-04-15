@@ -23,7 +23,7 @@ public class PlayerCPU extends Player {
 	 */
 	public PlayerCPU(int initialAccount, int minBet) {
 		super(initialAccount, minBet);
-		setPrimaryHand(new Hand(1, true));
+		hands.add(new Hand(this, 1, true));
 	}
 
 	/**
@@ -36,9 +36,9 @@ public class PlayerCPU extends Player {
 		while (getOptimalValueInHand() < MAX_HIT) {
 			dealer.dealOneCard(this, Face.UP);
 			System.out.println("Dealer hits. Dealer's hand is now: "
-					+ showPrimaryHand());
+					+ getHand());
 		}
-		hand.add(getPrimaryHand());
+		hand.add(getHand());
 		return hand;
 	}
 
@@ -52,11 +52,14 @@ public class PlayerCPU extends Player {
 	}
 
 	/**
-	 * Method nextFreeSplitHand.
+	 * Method nextHand returns null, CPU-player will not have "next hand", it
+	 * only has the first hand.
+	 * 
+	 * @return always null
 	 * 
 	 */
 	@Override
-	public Hand getSplitHand() {
+	public Hand nextHand() {
 		return null;
 	}
 
@@ -66,6 +69,6 @@ public class PlayerCPU extends Player {
 	 */
 	@Override
 	public Collection<ICard> returnAllCards() {
-		return getPrimaryHand().clear();
+		return getHand().clear();
 	}
 }

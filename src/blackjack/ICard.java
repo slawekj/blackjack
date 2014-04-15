@@ -1,9 +1,7 @@
 package blackjack;
 
 /**
- * This class defines the behavior of a standard game card. It doesn't have
- * anything specific to a BlackJack game.
- * 
+ * This class defines the behavior of a standard game card.
  * 
  * @author Janusz Slawek
  */
@@ -19,12 +17,6 @@ public interface ICard {
 	 * 
 	 */
 	public Suit getSuit();
-
-	/**
-	 * Method getValue.
-	 * 
-	 */
-	public int getValue();
 
 	/**
 	 * Method setFace.

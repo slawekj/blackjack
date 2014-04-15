@@ -8,16 +8,32 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This class implements BlackJack-specific hand of cards.
+ * 
+ * This class implements BlackJack-specific hand of cards. It is a superset of
+ * IHand's functionality.
+ * 
+ * A Hand in Black Jack is very important, human-player bets on hands. Hands of
+ * casino-player and human-player are evaluated against each other. Hands
+ * undergo various actions, e.g. HIT, SPLIT, DOUBLE, SURRENDER, STAND.
  * 
  * @author Janusz Slawek
  * 
  */
-public class Hand implements IHand {
+public class Hand implements IHand<ICard> {
 	/**
-	 * Field THRESHOLD. (value is 11)
+	 * This is a static variable, shared by all instances of Hand. It defines
+	 * the default mapping of a card rank to a value. By default Ace counts as
+	 * 1. This mapping relies on the index of Rank, defined in Rank.
+	 * 
 	 */
-	private final static int THRESHOLD = 11;
+	private final static int VALUES[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10,
+			10, 1 };
+
+	/**
+	 * Field ACE_THRESHOLD helps calculating the optimal value of a hand. (value
+	 * is 11)
+	 */
+	private final static int ACE_THRESHOLD = 11;
 
 	/**
 	 * Field GAIN_FROM_ONE_ACE. (value is 10). That's how much you gain if you
@@ -26,45 +42,57 @@ public class Hand implements IHand {
 	private final static int GAIN_FROM_ONE_ACE = 10;
 
 	/**
-	 * Field hand.
+	 * Field owner is final. Once a hand is pre-allocated, it never changes the
+	 * owner.
+	 */
+	private final Player owner;
+
+	/**
+	 * Field hand keeps Cards.
 	 */
 	private List<ICard> hand;
+
 	/**
 	 * Field countAces.
 	 */
 	private int countAces;
+
 	/**
 	 * Field isRevealed.
 	 */
 	private boolean isRevealed;
+
 	/**
 	 * Field isPrimary.
 	 */
 	private final boolean isPrimary;
+
 	/**
-	 * Field index.
+	 * Field index specifies index of a hand. It is useful when distinguishing
+	 * multiple hands of the same Player.
 	 */
-	private int index;
-	/**
-	 * Field bet.
-	 */
-	private int bet;
+	private final int index;
+
 	/**
 	 * Field hitPrivilege.
 	 */
 	private boolean hitPrivilege;
+
 	/**
 	 * Field splitPrivilege.
 	 */
 	private boolean splitPrivilege;
+
 	/**
 	 * Field doublePrivilege.
 	 */
 	private boolean doublePrivilege;
+
 	/**
 	 * Field surrenderPrivilege.
 	 */
 	private boolean surrenderPrivilege;
+
 	/**
 	 * Field isSurrendered. This field determines if a hand was surrendered or
 	 * not.
@@ -75,25 +103,35 @@ public class Hand implements IHand {
 	 * Constructor for BJHand.
 	 * 
 	 */
-	public Hand(int index, boolean isPrimary) {
+	public Hand(Player owner, int index, boolean isPrimary) {
+		this.owner = owner;
 		this.hand = new LinkedList<ICard>();
 		this.index = index;
 		this.countAces = 0;
 		this.isRevealed = true;
 		this.isPrimary = isPrimary;
 		this.isSurrendered = false;
-		allowHit();
-		allowSplit();
-		allowDouble();
-		allowSurrender();
+		setAllowedHit(true);
+		setAllowedSplit(true);
+		setAllowedDouble(true);
+		setAllowedSurrender(true);
+	}
+
+	@Override
+	/**
+	 * Method getOwner.
+	 * 
+	 */
+	public Player getOwner() {
+		return this.owner;
 	}
 
 	/**
-	 * Method add. It keeps track of the number of aces.
+	 * Method addElement. It keeps track of the number of aces.
 	 * 
 	 */
 	@Override
-	public void add(ICard card) {
+	public void addElement(ICard card) {
 		hand.add(card);
 		if (card.getRank() == Rank.ACE) {
 			countAces++;
@@ -124,7 +162,7 @@ public class Hand implements IHand {
 	public int getValue() {
 		int value = 0;
 		for (Iterator<ICard> i = hand.iterator(); i.hasNext();) {
-			value += i.next().getValue();
+			value += VALUES[i.next().getRank().getIndex()];
 		}
 		return value;
 	}
@@ -139,11 +177,11 @@ public class Hand implements IHand {
 	}
 
 	/**
-	 * Method countCards.
+	 * Method countElements.
 	 * 
 	 */
 	@Override
-	public int countCards() {
+	public int countElements() {
 		return hand.size();
 	}
 
@@ -191,30 +229,6 @@ public class Hand implements IHand {
 	}
 
 	/**
-	 * Method setBet.
-	 * 
-	 */
-	public void setBet(int bet) {
-		this.bet = bet;
-	}
-
-	/**
-	 * Method resetBet.
-	 * 
-	 */
-	public void resetBet() {
-		bet = 0;
-	}
-
-	/**
-	 * Method getBet.
-	 * 
-	 */
-	public int getBet() {
-		return this.bet;
-	}
-
-	/**
 	 * Method toString.
 	 * 
 	 */
@@ -224,44 +238,21 @@ public class Hand implements IHand {
 		if (!isPrimary) {
 			sb.append("(Split Hand " + getIndex() + "):");
 		}
-		if (countCards() > 0) {
+		if (countElements() > 0) {
 			for (Iterator<ICard> i = iterator(); i.hasNext();) {
 				sb.append(" " + i.next());
-			}
-			sb.append('.');
-			if (isRevealed()) {
-				sb.append(" Value:");
-				if (getOptimalValue() == 21) {
-					sb.append(" 21");
-				} else {
-					for (int i = 0; i < countAces() + 1; i++) {
-						sb.append(" " + (getValue() + i * 10));
-					}
-				}
-				sb.append('.');
 			}
 		} else {
 			sb.append("empty");
 		}
-		if (getBet() > 0) {
-			sb.append(" Bet: " + getBet());
-		}
 		return sb.toString().trim();
-	}
-
-	/**
-	 * Method isPrimary.
-	 * 
-	 */
-	public boolean isPrimary() {
-		return this.isPrimary;
 	}
 
 	/**
 	 * Method countAces.
 	 * 
 	 */
-	public int countAces() {
+	private int countAces() {
 		return countAces;
 	}
 
@@ -269,7 +260,7 @@ public class Hand implements IHand {
 	 * 
 	 * Method getOptimalValue. This method gets the optimal value of the hand,
 	 * e.g., if a Player have an Ace and Eight then the optimal value will be
-	 * 19, not 10 (Ace is counted as 11). On the other hand, if a Player have an
+	 * 19, not 10 (Ace is counted as 11). On the other hand, if a Player has an
 	 * Ace, Eight, and Five then the optimal value will be 14, not 24 (Ace is
 	 * counted as 1).
 	 * 
@@ -277,7 +268,7 @@ public class Hand implements IHand {
 	 */
 	public int getOptimalValue() {
 		int optimalValue = getValue();
-		if (optimalValue <= THRESHOLD && countAces() > 0) {
+		if (optimalValue <= ACE_THRESHOLD && countAces() > 0) {
 			optimalValue += GAIN_FROM_ONE_ACE;
 		}
 		return optimalValue;
@@ -294,92 +285,68 @@ public class Hand implements IHand {
 		List<ICard> duplicates = new LinkedList<ICard>();
 		for (Iterator<ICard> i = hand.iterator(); i.hasNext();) {
 			ICard c = i.next();
-			if (cardValues.contains(c.getValue())) {
+			if (cardValues.contains(VALUES[c.getRank().getIndex()])) {
 				duplicates.add(c);
 			} else {
-				cardValues.add(c.getValue());
+				cardValues.add(VALUES[c.getRank().getIndex()]);
 			}
 		}
 		return duplicates;
 	}
 
 	/**
-	 * Method canHit.
+	 * Method isAllowedHit.
 	 * 
 	 */
-	public boolean canHit() {
+	public boolean isAllowedHit() {
 		return hitPrivilege;
 	}
 
 	/**
-	 * Method allowHit.
+	 * Method setAllowedHit.
 	 * 
 	 */
-	public void allowHit() {
-		hitPrivilege = true;
+	public void setAllowedHit(boolean allowedHit) {
+		this.hitPrivilege = allowedHit;
 	}
 
 	/**
-	 * Method revokeHit.
+	 * Method isAllowedSplit.
 	 * 
 	 */
-	public void revokeHit() {
-		hitPrivilege = false;
-	}
-
-	/**
-	 * Method canSplit.
-	 * 
-	 */
-	public boolean canSplit() {
+	public boolean isAllowedSplit() {
 		return splitPrivilege;
 	}
 
 	/**
-	 * Method allowSplit.
+	 * Method setAllowedSplit.
 	 * 
 	 */
-	public void allowSplit() {
-		splitPrivilege = true;
+	public void setAllowedSplit(boolean allowedSplit) {
+		this.splitPrivilege = allowedSplit;
 	}
 
 	/**
-	 * Method revokeSplit.
+	 * Method isAllowedDouble.
 	 * 
 	 */
-	public void revokeSplit() {
-		splitPrivilege = false;
-	}
-
-	/**
-	 * Method canDouble.
-	 * 
-	 */
-	public boolean canDouble() {
+	public boolean isAllowedDouble() {
 		return doublePrivilege;
 	}
 
 	/**
-	 * Method allowDouble.
+	 * Method setAllowedDouble.
 	 * 
 	 */
-	public void allowDouble() {
-		doublePrivilege = true;
+	public void setAllowedDouble(boolean allowedDouble) {
+		this.doublePrivilege = allowedDouble;
 	}
 
 	/**
-	 * Method revokeDouble.
+	 * Method isAllowedSurrender
 	 * 
 	 */
-	public void revokeDouble() {
-		doublePrivilege = false;
-	}
-
-	/**
-	 * Method canSurreder
-	 * 
-	 */
-	public boolean canSurrender() {
+	public boolean isAllowedSurrender() {
 		return surrenderPrivilege;
 	}
 
@@ -387,16 +354,8 @@ public class Hand implements IHand {
 	 * Method allowSurrender()
 	 * 
 	 */
-	public void allowSurrender() {
-		surrenderPrivilege = true;
-	}
-
-	/**
-	 * Method revokeSurrender
-	 * 
-	 */
-	public void revokeSurrender() {
-		surrenderPrivilege = false;
+	public void setAllowedSurrender(boolean allowedSurrender) {
+		this.surrenderPrivilege = allowedSurrender;
 	}
 
 	/**
@@ -412,7 +371,7 @@ public class Hand implements IHand {
 	 * 
 	 */
 	public void setSurrendered(boolean isSurrendered) {
-		if (canSurrender()) {
+		if (isAllowedSurrender()) {
 			this.isSurrendered = isSurrendered;
 		}
 	}

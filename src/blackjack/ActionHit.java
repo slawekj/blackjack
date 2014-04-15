@@ -5,13 +5,17 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * 
+ * This class implements action HIT. Player can hit a hand, i.e. ask Dealer to
+ * deal one more card to a hand.
+ * 
  * @author Janusz Slawek
  */
 public class ActionHit implements IAction {
 	/**
-	 * Field NOTBUSTED. (value is 21)
+	 * Field notBusted.
 	 */
-	private final static int NOTBUSTED = 21;
+	private final int notBusted;
 	/**
 	 * Field dealer.
 	 */
@@ -25,9 +29,10 @@ public class ActionHit implements IAction {
 	 * Constructor for BJActionHit.
 	 * 
 	 */
-	public ActionHit(IDealer dealer, Hand hand) {
+	public ActionHit(IDealer dealer, Hand hand, int notBusted) {
 		this.dealer = dealer;
 		this.hand = hand;
+		this.notBusted = notBusted;
 	}
 
 	/**
@@ -46,16 +51,16 @@ public class ActionHit implements IAction {
 	@Override
 	public Collection<Hand> execute() {
 		List<Hand> result = new LinkedList<Hand>();
-		if (hand.canHit()) {
+		if (hand.isAllowedHit()) {
 			dealer.dealOneCard(hand, Face.UP);
 		}
-		if (hand.getValue() < NOTBUSTED) {
+		if (hand.getValue() < notBusted) {
 			result.add(hand);
 		}
-		hand.allowHit();
-		hand.revokeSplit();
-		hand.revokeDouble();
-		hand.revokeSurrender();
+		hand.setAllowedHit(true);
+		hand.setAllowedSplit(false);
+		hand.setAllowedDouble(false);
+		hand.setAllowedSurrender(false);
 		return result;
 	}
 }

@@ -3,6 +3,9 @@ package blackjack;
 import java.util.Collection;
 
 /**
+ * This class implements action SURRENDER. In this action Player decides to
+ * withdraw half of the bet. The other half automatically goes to Casino.
+ * 
  * @author Janusz Slawek
  */
 public class ActionSurrender implements IAction {
@@ -14,8 +17,6 @@ public class ActionSurrender implements IAction {
 	/**
 	 * Constructor for ActionSurrender.
 	 * 
-	 * @param hand
-	 *            BJHand
 	 */
 	public ActionSurrender(Hand hand) {
 		this.hand = hand;

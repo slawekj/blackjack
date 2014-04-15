@@ -38,11 +38,11 @@ public interface IDealer {
 	 * Deals one card to a specific hand.
 	 * 
 	 */
-	public void dealOneCard(IHand hand, Face f);
+	public void dealOneCard(IHand<ICard> hand, Face f);
 
 	/**
 	 * Deals a given card to a specific hand.
 	 * 
 	 */
-	public void dealOneCard(IHand hand, ICard card, Face f);
+	public void dealOneCard(IHand<ICard> hand, ICard card, Face f);
 }

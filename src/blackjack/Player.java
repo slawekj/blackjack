@@ -1,6 +1,7 @@
 package blackjack;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -16,23 +17,26 @@ public abstract class Player {
 	/**
 	 * Field primaryHand.
 	 */
-	private Hand primaryHand;
+	protected List<Hand> hands;
+
 	/**
 	 * Field account.
 	 */
 	private int account;
+
 	/**
 	 * Field minimalBet
 	 */
 	private int minimalBet;
 
 	/**
-	 * Constructor for AbstractBJPlayer.
+	 * Constructor for Player.
 	 * 
 	 */
 	public Player(int initialAccount, int minimalBet) {
 		setAccount(initialAccount);
 		setMinimalBet(minimalBet);
+		hands = new LinkedList<Hand>();
 	}
 
 	/**
@@ -56,7 +60,7 @@ public abstract class Player {
 	 * 
 	 */
 	public void giveOneCard(ICard card) {
-		getPrimaryHand().add(card);
+		getHand().addElement(card);
 	}
 
 	/**
@@ -64,7 +68,7 @@ public abstract class Player {
 	 * 
 	 */
 	public int minValueInHand() {
-		return getPrimaryHand().getValue();
+		return getHand().getValue();
 	}
 
 	/**
@@ -76,18 +80,10 @@ public abstract class Player {
 	}
 
 	/**
-	 * Method showPrimaryHand.
-	 * 
-	 */
-	public String showPrimaryHand() {
-		return getPrimaryHand().toString();
-	}
-
-	/**
 	 * Method revealHand.
 	 */
 	public void revealHand() {
-		getPrimaryHand().reveal();
+		getHand().reveal();
 	}
 
 	/**
@@ -95,7 +91,7 @@ public abstract class Player {
 	 * 
 	 */
 	public int getOptimalValueInHand() {
-		return getPrimaryHand().getOptimalValue();
+		return getHand().getOptimalValue();
 	}
 
 	/**
@@ -123,19 +119,12 @@ public abstract class Player {
 	}
 
 	/**
-	 * Method setPrimaryHand.
+	 * Method getHand gets Player's primary hand. Every player should have at
+	 * least one hand.
 	 * 
 	 */
-	public void setPrimaryHand(Hand primaryHand) {
-		this.primaryHand = primaryHand;
-	}
-
-	/**
-	 * Method getPrimaryHand.
-	 * 
-	 */
-	public Hand getPrimaryHand() {
-		return this.primaryHand;
+	public Hand getHand() {
+		return hands.get(0);
 	}
 
 	/**
@@ -173,7 +162,7 @@ public abstract class Player {
 	 * Method nextFreeSplitHand.
 	 * 
 	 */
-	public abstract Hand getSplitHand();
+	public abstract Hand nextHand();
 
 	/**
 	 * Method returnHand.

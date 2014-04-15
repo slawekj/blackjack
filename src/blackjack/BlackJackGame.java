@@ -94,6 +94,7 @@ public class BlackJackGame {
 				game.playGame();
 			} catch (Exception e) {
 				System.err.println("Game ended unexpectedly.");
+				e.printStackTrace();
 			} finally {
 				game.cleanUp();
 			}
@@ -108,7 +109,7 @@ public class BlackJackGame {
 	 */
 	public BlackJackGame() {
 		this.console = new BufferedReader(new InputStreamReader(System.in));
-		this.dealer = new Dealer(MINIMAL_BET, NOT_BUSTED);
+		this.dealer = new Dealer(NOT_BUSTED);
 		this.banker = (IBanker) this.dealer;
 		this.soleCasino = new PlayerCPU(DEALER_INITIAL_BALANCE, MINIMAL_BET);
 		this.soleHuman = new PlayerHuman(HUMAN_INITIAL_BALANCE, MINIMAL_BET,
@@ -185,11 +186,10 @@ public class BlackJackGame {
 			 * Display Dealer's hand, i.e. one card face-up as rank and suit,
 			 * one card face-down as X.
 			 */
-			System.out
-					.println("Dealer's hand: " + soleCasino.showPrimaryHand());
+			System.out.println("Dealer's hand: " + soleCasino.getHand());
 
 			Outcome result = null;
-			if (soleCasino.getPrimaryHand().getOptimalValue() == BLACKJACK) {
+			if (soleCasino.getHand().getOptimalValue() == BLACKJACK) {
 				/**
 				 * 
 				 * Dealer has a Black Jacks. Dealer must reveal cards. No more
@@ -197,27 +197,28 @@ public class BlackJackGame {
 				 * 
 				 */
 				soleCasino.revealHand();
-				System.out.println("Player's hand "
-						+ soleHuman.showPrimaryHand());
-				System.out.println("Dealer has a black jack "
-						+ soleCasino.showPrimaryHand());
-				if (soleHuman.getPrimaryHand().getOptimalValue() == BLACKJACK) {
+				System.out.println("Player's hand " + soleHuman.getHand());
+				System.out.println("Dealer has a black jack. "
+						+ soleCasino.getHand());
+				if (soleHuman.getHand().getOptimalValue() == BLACKJACK) {
 					result = Outcome.TIE;
 				} else {
 					result = Outcome.LOSE;
 				}
-				banker.resolveBet(soleHuman, soleCasino,
-						soleHuman.getPrimaryHand(), result);
+				banker.resolveBet(soleHuman, soleCasino, soleHuman.getHand(),
+						result);
 				System.out.println(result + ". Player's hand: "
-						+ soleHuman.getPrimaryHand().toString()
-						+ " VS Dealer's hand: " + soleCasino.showPrimaryHand());
+						+ soleHuman.getHand() + " VS Dealer's hand: "
+						+ soleCasino.getHand()
+
+				);
 			} else {
 				/**
 				 * 
 				 * Dealer doesn't have a Black Jack.
 				 * 
 				 */
-				if (soleHuman.getPrimaryHand().getOptimalValue() == BLACKJACK) {
+				if (soleHuman.getHand().getOptimalValue() == BLACKJACK) {
 					/**
 					 * 
 					 * Dealer peeked at the bottom card. Dealer doesn't have a
@@ -225,16 +226,15 @@ public class BlackJackGame {
 					 * doesn't reveal hand. Player wins.
 					 * 
 					 */
-					System.out.println("Player's hand "
-							+ soleHuman.showPrimaryHand() + ".");
+					System.out.println("Player's hand " + soleHuman.getHand()
+							+ ".");
 					System.out.println("Dealer doesn't have a black jack.");
 					result = Outcome.WIN_BJ;
 					banker.resolveBet(soleHuman, soleCasino,
-							soleHuman.getPrimaryHand(), result);
+							soleHuman.getHand(), result);
 					System.out.println(result + ". Player's hand: "
-							+ soleHuman.getPrimaryHand().toString()
-							+ " VS Dealer's hand: "
-							+ soleCasino.showPrimaryHand());
+							+ soleHuman.getHand() + " VS Dealer's hand: "
+							+ soleCasino.getHand());
 				} else {
 					/**
 					 * 
@@ -275,10 +275,10 @@ public class BlackJackGame {
 					if (atLeastOneValidHand) {
 						soleCasino.revealHand();
 						System.out.println("Dealer's hand: "
-								+ soleCasino.showPrimaryHand());
+								+ soleCasino.getHand());
 						soleCasino.play(dealer, banker);
 						System.out.println("Dealer's hand finally: "
-								+ soleCasino.showPrimaryHand());
+								+ soleCasino.getHand());
 					}
 
 					for (Iterator<Hand> i = humanHands.iterator(); i.hasNext();) {
@@ -289,7 +289,7 @@ public class BlackJackGame {
 						 * 
 						 */
 						result = banker.compareHands(humanHand,
-								soleCasino.getPrimaryHand());
+								soleCasino.getHand());
 						/**
 						 * Dealer resolves the bet
 						 * 
@@ -298,11 +298,13 @@ public class BlackJackGame {
 								result);
 
 						StringBuffer summary = new StringBuffer();
-						summary.append(result + ". Player's hand: "
-								+ humanHand.toString());
+						summary.append(result + ". Player's hand: " + humanHand
+								+ " Value " + humanHand.getOptimalValue() + ".");
 						if (humanHand.getValue() <= 21) {
 							summary.append(" VS Dealer's hand: "
-									+ soleCasino.showPrimaryHand());
+									+ soleCasino.getHand() + " Value "
+									+ soleCasino.getHand().getOptimalValue()
+									+ ".");
 						}
 						System.out.println(summary);
 					}
@@ -321,8 +323,9 @@ public class BlackJackGame {
 			System.out.println("");
 		}
 
-		System.out.println("\nThank you for the game. You played " + gameCount
-				+ " games. You started with " + HUMAN_INITIAL_BALANCE
-				+ ". You ended with " + soleHuman.getAccountBalance() + ".");
+		System.out.println("\nThank you for the game. You've played "
+				+ gameCount + " game(s). You started with "
+				+ HUMAN_INITIAL_BALANCE + ". You ended with "
+				+ soleHuman.getAccountBalance() + ".");
 	}
 }

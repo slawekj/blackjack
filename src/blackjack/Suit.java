@@ -1,6 +1,7 @@
 package blackjack;
 
 /**
+ * This enum defines Suit of card.
  * 
  * @author Janusz Slawek
  * 

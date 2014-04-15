@@ -3,6 +3,9 @@ package blackjack;
 import java.util.Collection;
 
 /**
+ * This Action implements DOUBLE. Player can double any hand which has not been
+ * HIT by Player.
+ * 
  * @author Janusz Slawek
  */
 public class ActionDouble implements IAction {
@@ -17,10 +20,6 @@ public class ActionDouble implements IAction {
 	private final IBanker banker;
 
 	/**
-	 * Field player.
-	 */
-	private final PlayerHuman player;
-	/**
 	 * Field hand.
 	 */
 	private final Hand hand;
@@ -29,11 +28,9 @@ public class ActionDouble implements IAction {
 	 * Constructor for ActionDouble.
 	 * 
 	 */
-	public ActionDouble(IDealer dealer, IBanker banker, PlayerHuman player,
-			Hand hand) {
+	public ActionDouble(IDealer dealer, IBanker banker, Hand hand) {
 		this.dealer = dealer;
 		this.banker = banker;
-		this.player = player;
 		this.hand = hand;
 	}
 
@@ -55,14 +52,14 @@ public class ActionDouble implements IAction {
 	 */
 	@Override
 	public Collection<Hand> execute() {
-		if (hand.canDouble()) {
-			banker.placeBet(player, hand, hand.getBet());
+		if (hand.isAllowedDouble()) {
+			banker.placeBet(hand.getOwner(), hand, banker.getBet(hand));
 			dealer.dealOneCard(hand, Face.UP);
 		}
-		hand.revokeHit();
-		hand.revokeSplit();
-		hand.revokeDouble();
-		hand.revokeSurrender();
+		hand.setAllowedHit(false);
+		hand.setAllowedSplit(false);
+		hand.setAllowedDouble(false);
+		hand.setAllowedSurrender(false);
 		return null;
 	}
 

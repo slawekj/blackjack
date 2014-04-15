@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * 
- * This class implements deck of type T. Internally it uses java.util.List<T>.
+ * This class implements deck of type T.
  * 
  * @author Janusz Slawek
  * 
@@ -26,8 +26,8 @@ public class Deck<T> implements IDeck<T> {
 	}
 
 	/**
-	 * Method takeOneFromTop. It doesn't throw exception if removing from empty
-	 * container.
+	 * Method takeOneFromTop. It returns null if there're no more cards in the
+	 * deck.
 	 * 
 	 */
 	@Override

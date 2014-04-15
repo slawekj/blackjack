@@ -1,6 +1,7 @@
 package blackjack;
 
 /**
+ * This enum defines Rank of card.
  * 
  * @author Janusz Slawek
  * 

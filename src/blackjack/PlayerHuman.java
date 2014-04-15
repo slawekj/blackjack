@@ -4,12 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -34,10 +32,6 @@ public class PlayerHuman extends Player {
 	 * Field br.
 	 */
 	private BufferedReader br;
-	/**
-	 * Field splitHands. Player can have up to three split hands.
-	 */
-	private Hand splitHands[];
 
 	/**
 	 * Field splitHandIndex. Shows next available hand.s
@@ -51,19 +45,18 @@ public class PlayerHuman extends Player {
 	public PlayerHuman(int initialAccount, int minBet, BufferedReader console) {
 		super(initialAccount, minBet);
 		br = console;
-
-		setPrimaryHand(new Hand(0, true));
+		hands.add(new Hand(this, 0, true));
 
 		/**
 		 * Human player can have up to three additional hands, pre-allocating
 		 * and indexing them here.
 		 * 
 		 */
-		splitHands = new Hand[3];
-		splitHands[0] = new Hand(1, false);
-		splitHands[1] = new Hand(2, false);
-		splitHands[2] = new Hand(3, false);
-		splitHandIndex = 0;
+		hands.add(new Hand(this, 1, false));
+		hands.add(new Hand(this, 2, false));
+		hands.add(new Hand(this, 3, false));
+
+		splitHandIndex = 1;
 	}
 
 	/**
@@ -74,7 +67,7 @@ public class PlayerHuman extends Player {
 	public List<Hand> play(IDealer dealer, IBanker banker) {
 		Stack<Hand> handsToPlay = new Stack<Hand>();
 		List<Hand> handsPlayed = new LinkedList<Hand>();
-		handsToPlay.add(getPrimaryHand());
+		handsToPlay.add(getHand());
 
 		while (!handsToPlay.isEmpty()) {
 			Hand currentHand = handsToPlay.pop();
@@ -118,9 +111,11 @@ public class PlayerHuman extends Player {
 		 * If there's a chance to HIT, ask if HIT
 		 * 
 		 */
-		if (currentHand.canHit() && currentHand.getOptimalValue() < NON_BUSTED) {
+		if (currentHand.isAllowedHit()
+				&& currentHand.getOptimalValue() < NON_BUSTED) {
 			actionString.append(actionCount + " to hit");
-			actionMap.put(actionCount, new ActionHit(dealer, currentHand));
+			actionMap.put(actionCount, new ActionHit(dealer, currentHand,
+					NON_BUSTED));
 			actionCount++;
 		}
 
@@ -129,8 +124,9 @@ public class PlayerHuman extends Player {
 		 * If there's a chance to SPLIT, ask if SPLIT
 		 * 
 		 */
-		if (currentHand.canSplit() && countSplitHands() < MAX_SPLIT_HANDS
-				&& currentHand.getOptimalValue() < NON_BUSTED) {
+		if (currentHand.isAllowedSplit() && countSplitHands() < MAX_SPLIT_HANDS
+				&& currentHand.getOptimalValue() < NON_BUSTED
+				&& getAccountBalance() >= banker.getBet(currentHand)) {
 			List<ICard> duplicates = currentHand.getDuplicatedCards();
 			for (Iterator<ICard> i = duplicates.iterator(); i.hasNext();) {
 				ICard duplicate = i.next();
@@ -140,7 +136,7 @@ public class PlayerHuman extends Player {
 				actionString.append(actionCount + " to split (" + duplicate
 						+ " -> new hand)");
 				actionMap.put(actionCount, new ActionSplit(dealer, banker,
-						this, currentHand, duplicate));
+						currentHand, duplicate));
 				actionCount++;
 			}
 		}
@@ -150,14 +146,14 @@ public class PlayerHuman extends Player {
 		 * If there's a chance to DOUBLE, ask if DOUBLE
 		 * 
 		 */
-		if (currentHand.canDouble()
+		if (currentHand.isAllowedDouble()
 				&& currentHand.getOptimalValue() < NON_BUSTED
-				&& getAccountBalance() >= currentHand.getBet()) {
+				&& getAccountBalance() >= banker.getBet(currentHand)) {
 			if (actionCount > 1) {
 				actionString.append(", ");
 			}
 			actionString.append(actionCount + " to double");
-			actionMap.put(actionCount, new ActionDouble(dealer, banker, this,
+			actionMap.put(actionCount, new ActionDouble(dealer, banker,
 					currentHand));
 			actionCount++;
 		}
@@ -167,7 +163,7 @@ public class PlayerHuman extends Player {
 		 * If there's a chance to SURRENDER, ask if SURRENDER
 		 * 
 		 */
-		if (currentHand.canSurrender()
+		if (currentHand.isAllowedSurrender()
 				&& currentHand.getOptimalValue() < NON_BUSTED) {
 			if (actionCount > 1) {
 				actionString.append(", ");
@@ -178,24 +174,34 @@ public class PlayerHuman extends Player {
 		}
 
 		actionString.append(". Press ENTER to stand: ");
+		actionMap.put(-1, new ActionStand());
 
-		try {
-			if (actionMap.size() > 0) {
-				System.out.print(actionString.toString());
-				int selection = Integer.parseInt(br.readLine());
-				if (actionMap.containsKey(selection)) {
-					selectedAction = actionMap.get(selection);
-				} else {
-					selectedAction = new ActionStand();
+		if (actionMap.size() > 1) {
+			String line = "";
+			int selection = -2;
+			System.out.print(actionString.toString());
+			do {
+				try {
+					line = br.readLine();
+					if ("".equals(line)) {
+						selection = -1;
+					} else {
+						selection = Integer.parseInt(line);
+					}
+				} catch (NumberFormatException e) {
+					selection = -2;
+				} catch (IOException e) {
+					throw new RuntimeException(
+							"Unable to determine user action from input stream");
 				}
-			} else {
-				selectedAction = new ActionStand();
-			}
-		} catch (NumberFormatException e) {
-			selectedAction = new ActionStand();
-		} catch (IOException e) {
-			throw new RuntimeException(
-					"Unable to determine user action from input stream");
+				if (!actionMap.containsKey(selection)) {
+					System.out.print("Your selection is incorrect. "
+							+ actionString.toString());
+				}
+			} while (!actionMap.containsKey(selection));
+			selectedAction = actionMap.get(selection);
+		} else {
+			selectedAction = actionMap.get(-1);
 		}
 
 		return selectedAction;
@@ -210,8 +216,8 @@ public class PlayerHuman extends Player {
 		boolean isBetCorrect = false;
 		if (getAccount() > getMinimalBet()) {
 			String line;
-			System.out
-					.print("Type how much do you want to bet. Press ENTER to bet the minimal amount: ");
+			System.out.print("Type how much do you want to bet. "
+					+ "Press ENTER to bet the minimal amount: ");
 			do {
 				try {
 					line = br.readLine();
@@ -236,15 +242,15 @@ public class PlayerHuman extends Player {
 			} while (!isBetCorrect);
 		}
 
-		banker.placeBet(this, getPrimaryHand(), bet);
+		banker.placeBet(this, getHand(), bet);
 	}
 
 	/**
 	 * Method nextFreeSplitHand.
 	 * 
 	 */
-	public Hand getSplitHand() {
-		return splitHandIndex < MAX_SPLIT_HANDS ? splitHands[splitHandIndex++]
+	public Hand nextHand() {
+		return splitHandIndex <= MAX_SPLIT_HANDS ? hands.get(splitHandIndex++)
 				: null;
 	}
 
@@ -255,20 +261,31 @@ public class PlayerHuman extends Player {
 	@Override
 	public boolean decideIfQuit() {
 		boolean decision = false;
+		boolean correctSelection = false;
+		String line = null;
 		if (getAccountBalance() >= getMinimalBet()) {
 			System.out.print("Your account is " + getAccountBalance()
 					+ ". Type q if you want to (q)uit the game. "
 					+ "Press ENTER otherwise: ");
-			try {
-				if (getAccountBalance() >= 1
-						&& "q".equalsIgnoreCase(br.readLine())) {
-
-					decision = true;
+			do {
+				try {
+					line = br.readLine();
+					if ("q".equalsIgnoreCase(line)) {
+						correctSelection = true;
+						decision = true;
+					} else if ("".equals(line)) {
+						correctSelection = true;
+					}
+				} catch (IOException e) {
+					throw new RuntimeException(
+							"Game unable to read from standard input", e);
 				}
-			} catch (IOException e) {
-				throw new RuntimeException(
-						"Game unable to read from standard input", e);
-			}
+				if (!correctSelection) {
+					System.out.print("Your command is incorrect. "
+							+ "Type q if you want to (q)uit the game. "
+							+ "Press ENTER otherwise: ");
+				}
+			} while (!correctSelection);
 		} else {
 			decision = true;
 		}
@@ -276,26 +293,25 @@ public class PlayerHuman extends Player {
 	}
 
 	/**
-	 * Method returnHand.
+	 * Method returnAllCards return all cards from all Player's hands and reset
+	 * the state of the hands for future games.
 	 * 
 	 */
 	@Override
 	public Collection<ICard> returnAllCards() {
-		getPrimaryHand().allowHit();
-		getPrimaryHand().allowSplit();
-		getPrimaryHand().allowDouble();
-		getPrimaryHand().allowSurrender();
-		getPrimaryHand().setSurrendered(false);
-		Set<ICard> result = new HashSet<ICard>(getPrimaryHand().clear());
-		for (int i = 0; i < splitHandIndex; i++) {
-			splitHands[i].allowHit();
-			splitHands[i].allowSplit();
-			splitHands[i].allowDouble();
-			splitHands[i].allowSurrender();
-			splitHands[i].setSurrendered(false);
-			result.addAll(splitHands[i].clear());
+		List<ICard> result = new LinkedList<ICard>();
+		for (Iterator<Hand> i = hands.iterator(); i.hasNext();) {
+			Hand hand = i.next();
+			hand.setAllowedHit(true);
+			hand.setAllowedSplit(true);
+			hand.setAllowedDouble(true);
+			hand.setAllowedSurrender(true);
+			hand.setSurrendered(false);
+			if (hand.countElements() > 0) {
+				result.addAll(hand.clear());
+			}
 		}
-		splitHandIndex = 0;
+		splitHandIndex = 1;
 		return result;
 	}
 
@@ -304,6 +320,6 @@ public class PlayerHuman extends Player {
 	 * 
 	 */
 	public int countSplitHands() {
-		return splitHandIndex;
+		return splitHandIndex - 1;
 	}
 }

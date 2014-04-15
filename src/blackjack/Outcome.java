@@ -2,7 +2,7 @@ package blackjack;
 
 /**
  * 
- * This class specifies a possible outcome of the game. Differend outcomes
+ * This class specifies a possible outcome of the game. Different outcomes
  * relate to different ways of resolving the bet. A separate outcome is
  * evaluated for each human-player hand VS casino-player hand.
  * 

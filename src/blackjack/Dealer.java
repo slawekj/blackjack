@@ -24,17 +24,20 @@ public class Dealer implements IDealer, IBanker {
 	/**
 	 * Field bets. Here dealer keeps mapping between hands and bets.
 	 */
-	private Map<IHand, Integer> bets;
+	private Map<IHand<ICard>, Integer> bets;
 
 	/**
 	 * Constructor for Dealer.
 	 * 
 	 */
-	public Dealer(int minimalBet, int notBusted) {
+	public Dealer(int notBusted) {
 		this.notBusted = notBusted;
-		this.bets = new HashMap<IHand, Integer>();
-
+		this.bets = new HashMap<IHand<ICard>, Integer>();
 		this.deck = new Deck<ICard>();
+		/**
+		 * At the beginning of the game Dealer creates a deck of 52 cards.
+		 * 
+		 */
 		for (Suit s : Suit.values()) {
 			for (Rank r : Rank.values()) {
 				deck.returnOneToBottom(new Card(r, s));
@@ -73,8 +76,10 @@ public class Dealer implements IDealer, IBanker {
 	public void dealOneCard(Player player, Face f) {
 		if (deck.countElements() > 0) {
 			ICard topCard = deck.takeOneFromTop();
-			topCard.setFace(f);
-			player.getPrimaryHand().add(topCard);
+			if (topCard != null) {
+				topCard.setFace(f);
+				player.getHand().addElement(topCard);
+			}
 		}
 	}
 
@@ -94,11 +99,13 @@ public class Dealer implements IDealer, IBanker {
 	 * 
 	 */
 	@Override
-	public void dealOneCard(IHand hand, Face f) {
+	public void dealOneCard(IHand<ICard> hand, Face f) {
 		if (deck.countElements() > 0) {
 			ICard topCard = deck.takeOneFromTop();
-			topCard.setFace(f);
-			hand.add(topCard);
+			if (topCard != null) {
+				topCard.setFace(f);
+				hand.addElement(topCard);
+			}
 		}
 	}
 
@@ -107,34 +114,36 @@ public class Dealer implements IDealer, IBanker {
 	 * 
 	 */
 	@Override
-	public void dealOneCard(IHand hand, ICard card, Face f) {
+	public void dealOneCard(IHand<ICard> hand, ICard card, Face f) {
 		card.setFace(f);
-		hand.add(card);
+		hand.addElement(card);
 	}
 
 	/**
-	 * Method placeBet places a bet on a hand. It takes money from Player's
+	 * Method placeBet places a bet on a hand. It withdraws money from Player's
 	 * account.
 	 * 
 	 */
 	@Override
 	public void placeBet(Player player, Hand hand, int bet) {
 		int moneyTaken = player.forfeitMoney(bet);
-		hand.setBet(hand.getBet() + moneyTaken);
-		bets.put(hand, hand.getBet());
+		// hand.setBet(getBet(hand) + moneyTaken);
+		if (bets.containsKey(hand)) {
+			bets.put(hand, getBet(hand) + moneyTaken);
+		} else {
+			bets.put(hand, moneyTaken);
+		}
 	}
 
 	/**
 	 * Method compareHands.
 	 * 
+	 * As Player always busts a hand before the Dealer can, Player's busted hand
+	 * will always lose to Dealer's busted hand.
+	 * 
 	 */
 	@Override
 	public Outcome compareHands(Hand humanHand, Hand casinoHand) {
-		/**
-		 * As Player always busts a hand before the Dealer can, Player's busted
-		 * hand will always lose to Dealer's busted hand.
-		 * 
-		 */
 		int casinoScore = casinoHand.getOptimalValue() <= notBusted ? casinoHand
 				.getOptimalValue() : -1;
 		int humanScore = humanHand.getOptimalValue() <= notBusted ? humanHand
@@ -160,20 +169,30 @@ public class Dealer implements IDealer, IBanker {
 			Outcome outcome) {
 		if (bets.containsKey(hand)) {
 			int money = bets.get(hand);
+			double multiplier = outcome.getMultiplier();
 			bets.remove(hand);
-			hand.resetBet();
 
 			money += casino.forfeitMoney(money);
-			if (outcome.getMultiplier() > 1.0) {
+			if (multiplier > 1.0) {
 				money += casino
 						.forfeitMoney((int) ((outcome.getMultiplier() - 1.0) * money));
+				multiplier = 1.0;
 			}
-
-			int toPlayer = (int) (outcome.getMultiplier() * money);
+			int toPlayer = (int) (multiplier * money);
 			int toCasino = money - toPlayer;
 
 			player.awardMoney(toPlayer);
 			casino.awardMoney(toCasino);
 		}
+	}
+
+	/**
+	 * Method getBet informs what is the bet of a given hand. It does not modify
+	 * hand or bet in any way.
+	 * 
+	 */
+	@Override
+	public int getBet(Hand hand) {
+		return bets.get(hand);
 	}
 }

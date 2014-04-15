@@ -5,30 +5,27 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * This Action implements SPLIT. Player can split any cards that have the same
+ * value, i.e. Player can split two 7s or a King and Jack.
+ * 
  * @author Janusz Slawek
  */
 public class ActionSplit implements IAction {
 	/**
-	 * Field MAX_SPLIT_HANDS. (value is 3)
-	 */
-	private final static int MAX_SPLIT_HANDS = 3;
-	/**
 	 * Field dealer.
 	 */
 	private final IDealer dealer;
+
 	/**
 	 * Field banker.
 	 */
 	private final IBanker banker;
 
 	/**
-	 * Field player.
-	 */
-	private final PlayerHuman player;
-	/**
 	 * Field originalHand.
 	 */
 	private final Hand originalHand;
+
 	/**
 	 * Field duplicate.
 	 */
@@ -38,11 +35,10 @@ public class ActionSplit implements IAction {
 	 * Constructor for BJActionSplit.
 	 * 
 	 */
-	public ActionSplit(IDealer dealer, IBanker banker, PlayerHuman player,
-			Hand originalHand, ICard duplicate) {
+	public ActionSplit(IDealer dealer, IBanker banker, Hand originalHand,
+			ICard duplicate) {
 		this.dealer = dealer;
 		this.banker = banker;
-		this.player = player;
 		this.originalHand = originalHand;
 		this.duplicate = duplicate;
 	}
@@ -69,33 +65,34 @@ public class ActionSplit implements IAction {
 	@Override
 	public Collection<Hand> execute() {
 		List<Hand> result = new LinkedList<Hand>();
-		if (originalHand.canSplit()
-				&& player.getAccountBalance() >= originalHand.getBet()) {
-			Hand newHand = null;
+		Hand newHand = null;
+		if (originalHand.isAllowedSplit()
+				&& originalHand.getOwner().getAccountBalance() >= banker
+						.getBet(originalHand)) {
 			if (originalHand.remove(duplicate)
-					&& player.countSplitHands() < MAX_SPLIT_HANDS) {
-				newHand = player.getSplitHand();
+					&& (newHand = originalHand.getOwner().nextHand()) != null) {
 				dealer.dealOneCard(newHand, duplicate, Face.UP);
 				dealer.dealOneCard(newHand, Face.UP);
-				banker.placeBet(player, newHand, originalHand.getBet());
+				banker.placeBet(originalHand.getOwner(), newHand,
+						banker.getBet(originalHand));
 				dealer.dealOneCard(originalHand, Face.UP);
-				originalHand.allowHit();
-				originalHand.allowSplit();
-				originalHand.allowDouble();
-				originalHand.revokeSurrender();
-				newHand.allowHit();
-				newHand.allowSplit();
-				newHand.allowDouble();
-				newHand.revokeSurrender();
+				originalHand.setAllowedHit(true);
+				originalHand.setAllowedSplit(true);
+				originalHand.setAllowedDouble(true);
+				originalHand.setAllowedSurrender(false);
+				newHand.setAllowedHit(true);
+				newHand.setAllowedSplit(true);
+				newHand.setAllowedDouble(true);
+				newHand.setAllowedSurrender(false);
 				if (duplicate.getRank() == Rank.ACE) {
-					originalHand.revokeHit();
-					originalHand.revokeSplit();
-					originalHand.revokeDouble();
-					originalHand.revokeSurrender();
-					newHand.revokeHit();
-					newHand.revokeSplit();
-					newHand.revokeDouble();
-					newHand.revokeSurrender();
+					originalHand.setAllowedHit(false);
+					originalHand.setAllowedSplit(false);
+					originalHand.setAllowedDouble(false);
+					originalHand.setAllowedSurrender(false);
+					newHand.setAllowedHit(false);
+					newHand.setAllowedSplit(false);
+					newHand.setAllowedDouble(false);
+					newHand.setAllowedSurrender(false);
 					dealer.dealOneCard(newHand, Face.UP);
 					dealer.dealOneCard(originalHand, Face.UP);
 				}
